@@ -8,8 +8,8 @@
 		"dummy_value": 1000
     },
     "dirs": {
-            "input_data_dir": "C:/data/Cats/MissingDataOpenData/",
-			"output_data_dir": "C:/data/Cats/missing_data_output/"
+            "input_data_dir": ".\\MissingDataOpenData",
+			"output_data_dir": ".\\MissingDataOpenData\\output"
 	},
 	"challenge_server": {
 		"address": "http://fungi.compute.dtu.dk:8080"

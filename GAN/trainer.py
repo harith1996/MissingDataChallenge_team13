@@ -1,5 +1,4 @@
-
-from model import generator, discriminator
+from GAN.model import generator, discriminator
 import argparse
 import os
 import random
@@ -14,8 +13,6 @@ import torchvision.transforms as transforms
 import torchvision.utils as vutils
 from torch.autograd import Variable
 
-from model import _netlocalD, _netG
-import utils
 epochs = 100
 Batch_Size = 64
 lr = 0.0002

@@ -112,7 +112,6 @@ for epoch in range(resume_epoch, epochs):
 
         out_image_name = os.path.join(inpainted_result_dir, f"{idx}.png")
 
-        # real_cpu = torch.from_numpy(io.imread(in_original_image))
         original_image_matrix = numpy.matrix(io.imread(in_original_image))
         mask = torch.from_numpy(io.imread(in_mask_image))
 

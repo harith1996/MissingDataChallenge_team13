@@ -17,6 +17,7 @@ from torch.autograd import Variable
 from inpaint_tools import read_file_list
 from tqdm import tqdm
 from inpaint_config import InPaintConfig
+import numpy as np
 
 epochs = 100
 Batch_Size = 64
@@ -28,7 +29,7 @@ args = argparse.ArgumentParser(description='InpaintImages')
 config = InPaintConfig(args)
 settings = config.settings
 
-ngpu = 0
+ngpu = 1
 wtl2 = 0.999
 
 # custom weights initialization called on netG and netD
@@ -110,17 +111,16 @@ for epoch in range(resume_epoch, epochs):
         in_original_image = os.path.join(input_data_dir, "originals", f"{idx}.jpg")
 
         out_image_name = os.path.join(inpainted_result_dir, f"{idx}.png")
-
-        data = io.imread(in_original_image)
         data_mask = io.imread(in_mask_image)
 
-        real_cpu, _ = Variable(data)
+        real_cpu = torch.from_numpy(io.imread(in_original_image))
+
 
         print(real_cpu)
         exit(0)
 
 
-        real_masked = real_cpu[:,:,int(128/4):int(128/4)+int(128/2),int(128/4):int(128/4)+int(128/2)]
+        real_masked = real_cpu[:,:,int(360/4):int(360/4)+int(360/2),int(360/4):int(360/4)+int(360/2)]
         batch_size = real_cpu.size(0)
         with torch.no_grad():
             input_real.resize_(real_cpu.size()).copy_(real_cpu)

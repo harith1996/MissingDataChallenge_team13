@@ -15,5 +15,5 @@ def read_file_list(file_list):
     for line in lines:
         ls = line.strip()
         samples.append(ls)
-    print(samples)
+        
     return samples

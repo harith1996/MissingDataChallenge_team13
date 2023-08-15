@@ -114,11 +114,11 @@ for epoch in range(resume_epoch, epochs):
 
         # original_image_matrix = numpy.matrix(io.imread(in_original_image))
         # mask = torch.from_numpy(io.imread(in_mask_image))
-
         # mask_indexes = [(index, row.index(255)) for index, row in enumerate(original_image_matrix) if 255 in row]
 
         input_real = torch.from_numpy(io.imread(in_original_image))
         input_masked = torch.from_numpy(io.imread(in_masked_image))
+        
         # input_masked = input_real[mask_indexes] = mask[mask_indexes]
         batch_size = input_real.size(0)
 

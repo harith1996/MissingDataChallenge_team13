@@ -10,4 +10,4 @@ with open('MissingDataOpenData/data_splits/training.txt') as f:
     content = [x.strip() for x in content]
     print(content)
     for filename in content:
-        shutil.copy(IMAGE_PATH + "/" + filename, "MissingDataOpenData/training")
+        shutil.copy(IMAGE_PATH + "/" + filename + '.jpg', "MissingDataOpenData/training")

@@ -1,3 +1,8 @@
+import sys
+ 
+# setting path
+sys.path.append('../MissingDataChallenge_team13')
+
 import numpy as np
 import matplotlib.pyplot as plt
 from inpaint_tools import read_file_list

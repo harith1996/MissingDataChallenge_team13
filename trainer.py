@@ -114,17 +114,16 @@ for epoch in range(resume_epoch, epochs):
 
         # real_cpu = torch.from_numpy(io.imread(in_original_image))
         original_image_matrix = numpy.matrix(io.imread(in_original_image))
-        original = torch.from_numpy(io.imread(in_original_image))
         mask = torch.from_numpy(io.imread(in_mask_image))
 
         mask_indexes = [(index, row.index(255)) for index, row in enumerate(original_image_matrix) if 255 in row]
 
-
-        input_masked = original[mask_indexes] = mask[mask_indexes]
-        batch_size = original.size(0)
+        input_real = torch.from_numpy(io.imread(in_original_image))
+        input_masked = input_real[mask_indexes] = mask[mask_indexes]
+        batch_size = input_real.size(0)
 
         with torch.no_grad():
-            input_real.resize_(original.size()).copy_(original)
+            input_real.resize_(input_real.size()).copy_(input_real)
             input_masked.resize_(input_masked.size()).copy_(input_masked)
 
         #start the discriminator by training with real data---

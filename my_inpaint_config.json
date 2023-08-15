@@ -1,13 +1,14 @@
 {
 	"team_data":
 	{
-		"name": "YourTeamNameHere"
+		"name": "Three Brain Cells"
 	},
     "training_parms": {
 		"method": "YourMethodHere",
 		"dummy_value": 1000
     },
     "dirs": {
+			"description": "change the backslashes to forward slashes if you are on a mac or linux",
             "input_data_dir": ".\\MissingDataOpenData",
 			"output_data_dir": ".\\MissingDataOpenData\\output"
 	},

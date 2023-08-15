@@ -17,7 +17,7 @@ from torch.autograd import Variable
 from inpaint_tools import read_file_list
 from tqdm import tqdm
 from inpaint_config import InPaintConfig
-import numpy as np
+import numpy
 
 epochs = 100
 Batch_Size = 64
@@ -111,20 +111,21 @@ for epoch in range(resume_epoch, epochs):
         in_original_image = os.path.join(input_data_dir, "originals", f"{idx}.jpg")
 
         out_image_name = os.path.join(inpainted_result_dir, f"{idx}.png")
-        data_mask = io.imread(in_mask_image)
 
-        real_cpu = torch.from_numpy(io.imread(in_original_image))
+        # real_cpu = torch.from_numpy(io.imread(in_original_image))
+        original_image_matrix = numpy.matrix(io.imread(in_original_image))
+        original = torch.from_numpy(io.imread(in_original_image))
+        mask = torch.from_numpy(io.imread(in_mask_image))
+
+        mask_indexes = [(index, row.index(255)) for index, row in enumerate(original_image_matrix) if 255 in row]
 
 
-        print(real_cpu)
-        exit(0)
+        input_masked = original[mask_indexes] = mask[mask_indexes]
+        batch_size = original.size(0)
 
-
-        real_masked = real_cpu[:,:,int(360/4):int(360/4)+int(360/2),int(360/4):int(360/4)+int(360/2)]
-        batch_size = real_cpu.size(0)
         with torch.no_grad():
-            input_real.resize_(real_cpu.size()).copy_(real_cpu)
-            input_masked.resize_(data_mask.size()).copy_(data_mask)
+            input_real.resize_(original.size()).copy_(original)
+            input_masked.resize_(input_masked.size()).copy_(input_masked)
 
         #start the discriminator by training with real data---
         netD.zero_grad()

@@ -106,19 +106,20 @@ for epoch in range(resume_epoch, epochs):
     print(f"Inpainting {len(file_ids)} images")
 
     for idx in tqdm(file_ids):
-        # in_masked_image = os.path.join(input_data_dir, "masked", f"{idx}_stroke_masked.png")
-        in_mask_image = os.path.join(input_data_dir, "masks", f"{idx}_stroke_mask.png")
+        in_masked_image = os.path.join(input_data_dir, "masked", f"{idx}_stroke_masked.png")
+        # in_mask_image = os.path.join(input_data_dir, "masks", f"{idx}_stroke_mask.png")
         in_original_image = os.path.join(input_data_dir, "originals", f"{idx}.jpg")
 
         out_image_name = os.path.join(inpainted_result_dir, f"{idx}.png")
 
-        original_image_matrix = numpy.matrix(io.imread(in_original_image))
-        mask = torch.from_numpy(io.imread(in_mask_image))
+        # original_image_matrix = numpy.matrix(io.imread(in_original_image))
+        # mask = torch.from_numpy(io.imread(in_mask_image))
 
-        mask_indexes = [(index, row.index(255)) for index, row in enumerate(original_image_matrix) if 255 in row]
+        # mask_indexes = [(index, row.index(255)) for index, row in enumerate(original_image_matrix) if 255 in row]
 
         input_real = torch.from_numpy(io.imread(in_original_image))
-        input_masked = input_real[mask_indexes] = mask[mask_indexes]
+        input_masked = torch.from_numpy(io.imread(in_masked_image))
+        # input_masked = input_real[mask_indexes] = mask[mask_indexes]
         batch_size = input_real.size(0)
 
         with torch.no_grad():

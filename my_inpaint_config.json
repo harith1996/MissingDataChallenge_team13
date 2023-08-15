@@ -9,8 +9,8 @@
     },
     "dirs": {
 			"description": "change the backslashes to forward slashes if you are on a mac or linux",
-            "input_data_dir": ".\\MissingDataOpenData",
-			"output_data_dir": ".\\MissingDataOpenData\\output"
+            "input_data_dir": "MissingDataOpenData",
+			"output_data_dir": "MissingDataOpenData/output"
 	},
 	"challenge_server": {
 		"address": "http://fungi.compute.dtu.dk:8080"

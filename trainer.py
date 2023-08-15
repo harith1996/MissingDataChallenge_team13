@@ -4,6 +4,8 @@ import os
 import random
 import torch
 import torch.nn as nn
+import pathlib
+from skimage import io
 import torch.nn.parallel
 import torch.backends.cudnn as cudnn
 import torch.optim as optim
@@ -12,35 +14,21 @@ import torchvision.datasets as dset
 import torchvision.transforms as transforms
 import torchvision.utils as vutils
 from torch.autograd import Variable
+from inpaint_tools import read_file_list
+from tqdm import tqdm
+from inpaint_config import InPaintConfig
 
 epochs = 100
 Batch_Size = 64
 lr = 0.0002
 beta1 = 0.5
 over = 4
-parser = argparse.ArgumentParser()
-parser.add_argument('--dataroot',  default='dataset/train',
-                    help='path to dataset')
-opt = parser.parse_args()
-try:
-    os.makedirs("result/train/cropped")
-    os.makedirs("result/train/real")
-    os.makedirs("result/train/recon")
-    os.makedirs("model")
-except OSError:
-    pass
 
-transform = transforms.Compose([transforms.Scale(360),
-                                transforms.CenterCrop(360),
-                                transforms.ToTensor(),
-                                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-dataset = dset.ImageFolder(root=opt.dataroot, transform=transform)
-assert dataset
-dataloader = torch.utils.data.DataLoader(dataset, batch_size=Batch_Size,
-                                         shuffle=True, num_workers=2)
+args = argparse.ArgumentParser(description='InpaintImages')
+config = InPaintConfig(args)
+settings = config.settings
 
-ngpu = int(opt.ngpu)
-
+ngpu = 0
 wtl2 = 0.999
 
 # custom weights initialization called on netG and netD
@@ -68,7 +56,7 @@ criterion = nn.BCELoss()
 criterionMSE = nn.MSELoss()
 
 input_real = torch.FloatTensor(Batch_Size, 3, 360, 360)
-input_cropped = torch.FloatTensor(Batch_Size, 3, 360, 360)
+input_masked = torch.FloatTensor(Batch_Size, 3, 360, 360)
 label = torch.FloatTensor(Batch_Size)
 real_label = 1
 fake_label = 0
@@ -80,13 +68,13 @@ netD.cuda()
 netG.cuda()
 criterion.cuda()
 criterionMSE.cuda()
-input_real, input_cropped, label = input_real.cuda(
-), input_cropped.cuda(), label.cuda()
+input_real, input_masked, label = input_real.cuda(
+), input_masked.cuda(), label.cuda()
 real_center = real_center.cuda()
 
 
 input_real = Variable(input_real)
-input_cropped = Variable(input_cropped)
+input_masked = Variable(input_masked)
 label = Variable(label)
 
 
@@ -95,24 +83,50 @@ real_center = Variable(real_center)
 optimizerD = optim.Adam(netD.parameters(), lr=lr, betas=(beta1, 0.999))
 optimizerG = optim.Adam(netG.parameters(), lr=lr, betas=(beta1, 0.999))
 
+
+
 for epoch in range(resume_epoch, epochs):
-    for i, data in enumerate(dataloader, 0):
-        real_cpu, _ = data
-        real_center_cpu = real_cpu[:, :, int(
-            360/4):int(360/4)+int(360/2), int(360/4):int(360/4)+int(360/2)]
+    input_data_dir = settings["dirs"]["input_data_dir"]
+    output_data_dir = settings["dirs"]["output_data_dir"]
+    data_set = settings["data_set"]
+    model_dir = os.path.join(output_data_dir, "trained_model")
+
+    inpainted_result_dir = os.path.join(output_data_dir, f"inpainted_{data_set}")
+    pathlib.Path(inpainted_result_dir).mkdir(parents=True, exist_ok=True)
+
+    print(f"InPainting {data_set} and placing results in {inpainted_result_dir} with model from {model_dir}")
+
+    avg_img_name = os.path.join(model_dir, "average_image.png")
+    avg_img = io.imread(avg_img_name)
+
+    file_list = os.path.join(input_data_dir, "data_splits", data_set + ".txt")
+    file_ids = read_file_list(file_list)
+
+    print(f"Inpainting {len(file_ids)} images")
+
+    for idx in tqdm(file_ids):
+        # in_masked_image = os.path.join(input_data_dir, "masked", f"{idx}_stroke_masked.png")
+        in_mask_image = os.path.join(input_data_dir, "masks", f"{idx}_stroke_mask.png")
+        in_original_image = os.path.join(input_data_dir, "originals", f"{idx}.jpg")
+
+        out_image_name = os.path.join(inpainted_result_dir, f"{idx}.png")
+
+        data = io.imread(in_original_image)
+        data_mask = io.imread(in_mask_image)
+
+        real_cpu, _ = Variable(data)
+
+        print(real_cpu)
+        exit(0)
+
+
+        real_masked = real_cpu[:,:,int(128/4):int(128/4)+int(128/2),int(128/4):int(128/4)+int(128/2)]
         batch_size = real_cpu.size(0)
         with torch.no_grad():
             input_real.resize_(real_cpu.size()).copy_(real_cpu)
-            input_cropped.resize_(real_cpu.size()).copy_(real_cpu)
-            real_center.resize_(real_center_cpu.size()).copy_(real_center_cpu)
-            input_cropped[:, 0, int(360/4+over):int(360/4+360/2-over),
-                          int(360/4+over):int(360/4+360/2-over)] = 2*117.0/255.0 - 1.0
-            input_cropped[:, 1, int(360/4+over):int(360/4+360/2-over),
-                          int(360/4+over):int(360/4+360/2-over)] = 2*104.0/255.0 - 1.0
-            input_cropped[:, 2, int(360/4+over):int(360/4+360/2-over),
-                          int(360/4+over):int(360/4+360/2-over)] = 2*123.0/255.0 - 1.0
+            input_masked.resize_(data_mask.size()).copy_(data_mask)
 
-        # start the discriminator by training with real data---
+        #start the discriminator by training with real data---
         netD.zero_grad()
         with torch.no_grad():
             label.resize_(batch_size).fill_(real_label)
@@ -123,7 +137,7 @@ for epoch in range(resume_epoch, epochs):
         D_x = output.data.mean()
 
         # train the discriminator with fake data---
-        fake = netG(input_cropped)
+        fake = netG(input_masked)
         label.data.fill_(fake_label)
         output = netD(fake.detach())
         errD_fake = criterion(output, label)
@@ -143,11 +157,8 @@ for epoch in range(resume_epoch, epochs):
         wtl2Matrix.data[:, :, int(over):int(
             360/2 - over), int(over):int(360/2 - over)] = wtl2
 
-        errG_l2 = (fake-real_center).pow(2)
-        errG_l2 = errG_l2 * wtl2Matrix
-        errG_l2 = errG_l2.mean()
 
-        errG = (1-wtl2) * errG_D + wtl2 * errG_l2
+        errG = (1-wtl2) * errG_D + wtl2
 
         errG.backward()
 
@@ -155,17 +166,14 @@ for epoch in range(resume_epoch, epochs):
         optimizerG.step()
 
         print('[%d / %d][%d / %d] Loss_D: %.4f Loss_G: %.4f / %.4f l_D(x): %.4f l_D(G(z)): %.4f'
-              % (epoch, epochs, i, len(dataloader),
-                 errD.data, errG_D.data, errG_l2.data, D_x, D_G_z1, ))
+            % (epoch, epochs, idx, len(file_ids)),
+                errD.data, errG_D.data, D_x, D_G_z1, )
 
-        if i % 100 == 0:
-
-            vutils.save_image(real_cpu,
-                              'result/train/real/real_samples_epoch_%03d.png' % (epoch))
-            vutils.save_image(input_cropped.data,
-                              'result/train/cropped/cropped_samples_epoch_%03d.png' % (epoch))
-            recon_image = input_cropped.clone()
+        if idx % 100 == 0:
+        
+            vutils.save_image(real_cpu, out_image_name)
+            vutils.save_image(input_masked.data, out_image_name)
+            recon_image = input_masked.clone()
             recon_image.data[:, :, int(
                 360/4):int(360/4+360/2), int(360/4):int(360/4+360/2)] = fake.data
-            vutils.save_image(recon_image.data,
-                              'result/train/recon/recon_center_samples_epoch_%03d.png' % (epoch))
+            vutils.save_image(recon_image.data, out_image_name)

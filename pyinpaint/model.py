@@ -12,10 +12,11 @@ import pathlib
 import os
 from skimage import io
 import cv2 as cv
+from pyinpaint import Inpaint
 
 from PIL import Image
 from skimage.morphology import disk, binary_dilation
-from skimage.restoration import inpaint
+# from skimage.restoration import inpaint
 from tqdm import tqdm
 
 args = argparse.ArgumentParser(description='InpaintImages')
@@ -35,26 +36,24 @@ file_ids = read_file_list(file_list)
 print(f"Inpainting {len(file_ids)} images")
 
 for idx in tqdm(file_ids):
-    image_defect = io.imread(os.path.join(input_data_dir, "masked", f"{idx}_stroke_masked.png"))
-    mask = io.imread(os.path.join(input_data_dir, "masks", f"{idx}_stroke_mask.png"))
-    image_orig = io.imread(os.path.join(input_data_dir, "originals", f"{idx}.jpg"))
+    # image_defect = io.imread(os.path.join(input_data_dir, "masked", f"{idx}_stroke_masked.png"))
+    # mask = io.imread(os.path.join(input_data_dir, "masks", f"{idx}_stroke_mask.png"))
+    # image_orig = io.imread(os.path.join(input_data_dir, "originals", f"{idx}.jpg"))
     out_image_name = os.path.join(inpainted_result_dir, f"{idx}.png")
 
-    # add randomly positioned small point-like defects
-    rstate = np.random.default_rng(0)
-    
-    for radius in [0, 2, 4]:
 
-        # larger defects are less common
-        thresh = 3 + 0.25 * radius  # make larger defects less common
-        tmp_mask = rstate.standard_normal(image_orig.shape[:-1]) > thresh
-        if radius > 0:
-            tmp_mask = binary_dilation(tmp_mask, disk(radius, dtype=bool))
-        mask[tmp_mask] = 1
+    inpaint = Inpaint(os.path.join(input_data_dir, "masked", f"{idx}_stroke_masked.png"), os.path.join(input_data_dir, "masks", f"{idx}_stroke_mask.png"))
+    inpainted_img = inpaint(4, 1000, 5)
+    plt.imsave(out_image_name, inpainted_img)
+    # io.imsave(out_image_name, inpainted_img)
 
-    image_result = inpaint.inpaint_biharmonic(image_defect, mask, channel_axis=-1)
-    # io.imshow(image_result)
-    # io.show()
-    
-    image_result = (image_result * 255).astype(np.uint8)
-    io.imsave(out_image_name, image_result)
+
+    # mask0 = Image.fromarray(mask)
+    # mask0 = np.asarray(mask0.resize((64, 64), Image.BILINEAR))
+    # image_defect = Image.fromarray(image_defect)
+    # image_defect = np.asarray(image_defect.resize((64, 64), Image.BILINEAR))
+    # image_result = inpaint.inpaint_biharmonic(image_defect, mask0, channel_axis=-1)
+
+    # image_result = (image_result * 255).astype(np.uint8)
+    # image_defect = Image.fromarray(image_result)
+    # image_defect = np.asarray(image_defect.resize((360, 360), Image.BILINEAR))

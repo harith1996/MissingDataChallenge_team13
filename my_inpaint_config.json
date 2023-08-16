@@ -4,7 +4,7 @@
 		"name": "Three Brain Cells"
 	},
     "training_parms": {
-		"method": "BiHarmonicEquationAssumption",
+		"method": "DirichletInterpolation",
 		"dummy_value": 1000
     },
     "dirs": {
